@@ -1,0 +1,527 @@
+{
+  "name": "MainWorkflow",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ (() => { try { return $('ASR: Whisper').first().json.text; } catch(e) { try { return $('When chat message received').first().json.chatInput; } catch(e2) { try { return $('Experiment Webhook').first().json.body.chatInput; } catch(e3) { return ''; } } } })() }}",
+        "options": {
+          "systemMessage": "=You are NCB Kiosk Unit 1, an automated access control and information assistant deployed in the North Classroom Building at the University of Colorado Denver. You manage visitor access to faculty areas, provide campus information, and verify identity-based permissions.\n\nIDENTITY & ACCESS CONTROL\nYou receive real-time biometric data from the face recognition system. When any access request is made, you MUST call access_policy_search before making an authorization decision — do not approve or deny access without retrieving the relevant policy first.\n\nTOOLS\n- access_policy_search → retrieve campus access policies, authorization rules, and visitor protocols. Always pass the full retrieval context verbatim in your search query.\n- wave_arm → physically wave or greet. No input required.\n- register_face → visitor introduces themselves or tells you their name. Call immediately. | input: {\"name\": \"their name\"}\n- Send a message in Gmail → send an email on behalf of the user. | input: {\"sendTo\": \"email\", \"subject\": \"subject\", \"message\": \"body\"}\n\nRULES\n- Never grant or deny access without first calling access_policy_search.\n- After calling register_face, use the exact text in \"suggest_reply\" as your reply — do not paraphrase.\n- Be professional and concise.\n\nCURRENT CONTEXT\nTime: {{ $json.current_time || 'unknown' }}\nDay: {{ $json.day_of_week || 'unknown' }}\nLocation: {{ $json.location || 'Unknown' }}\nVisitor: {{ JSON.stringify($json.faces || []) }}\nIdentity confidence: {{ $json.identity_confidence || 0 }}\nScene: {{ $json.scene_caption || $json.scene_memo || 'No scene data.' }}\n{{ $json.personalization_context || '' }}\nRetrieval context: {{ $json.retrieval_hint || '' }}\nWhen calling access_policy_search, include the retrieval context above verbatim in your search query to surface relevant access policies."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        -496,
+        176
+      ],
+      "id": "048b88e2-3cd6-48e1-94e9-18f9c414043f",
+      "name": "LLM - Ollama 3",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "triggerOn": "folder",
+        "path": "/data/asr",
+        "events": [
+          "add",
+          "change"
+        ],
+        "options": {
+          "followSymlinks": true,
+          "usePolling": true
+        }
+      },
+      "type": "n8n-nodes-base.localFileTrigger",
+      "typeVersion": 1,
+      "position": [
+        -2384,
+        80
+      ],
+      "id": "7ebe9c5b-1b22-45bb-87e7-87b42bd13821",
+      "name": "Local File Trigger",
+      "retryOnFail": false,
+      "alwaysOutputData": false,
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "fileSelector": "={{ $('Local File Trigger').item.json.path }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        -1648,
+        80
+      ],
+      "id": "e42f8bca-0e04-4999-8d6e-ae560c0b6e39",
+      "name": "Read/Write Files from Disk"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8010/tts/synthesize",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.output }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        0,
+        176
+      ],
+      "id": "ddc6c1cc-320d-4d52-9c5f-19656b4f3bf0",
+      "name": "TTS: Azure",
+      "alwaysOutputData": true,
+      "continueOnFail": true,
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseMode": "streaming"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -1488,
+        416
+      ],
+      "id": "fb8cf6cf-ea22-45d8-a62a-594bda6a355e",
+      "name": "When chat message received",
+      "webhookId": "4dde8d39-32d0-4624-8870-f5b12aec5858"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "robot-chat",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -1488,
+        616
+      ],
+      "id": "c3d4e5f6-a7b8-9012-cdef-345678901234",
+      "name": "Experiment Webhook",
+      "webhookId": "robot-chat"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ output: $('LLM - Ollama 3').first().json.output || '' }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        304,
+        400
+      ],
+      "id": "d4e5f6a7-b8c9-0123-defa-456789012345",
+      "name": "Respond to Webhook",
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "url": "http://host.docker.internal:8089/state",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -1024,
+        112
+      ],
+      "id": "e0f7afe0-e9e2-4979-baf7-4a8759fe66ac",
+      "name": "Get Vision State"
+    },
+    {
+      "parameters": {
+        "jsCode": "const state = $input.first().json;\nconst now = new Date();\n\nconst locations = {\n  \"LOC_001\": \"This is Room 2010. You can find 2 office rooms for 2 professors here. Professor Caroline Clevenger and Professor Moatassem Abdallah. Caroline teaches Construction Planning and Control. Moatassem teaches Building Information Modeling\",\n  \"LOC_002\": \"Hallway near elevators\",\n  \"LOC_003\": \"Charging station\",\n  \"LOC_004\": \"Whiteboard area\"\n};\n\nconst locationId = state.location;\nconst locationDescription = locations[locationId] || locationId || 'Unknown';\n\nconst faces = Array.isArray(state.faces) ? state.faces : [];\nconst primaryFace = faces.length > 0 ? faces[0] : null;\nconst confidence = primaryFace ? (primaryFace.confidence || 0) : 0;\nconst name = primaryFace ? (primaryFace.name || 'unknown') : 'unknown';\n\nlet retrieval_hint = '';\nif (confidence >= 0.80) {\n  retrieval_hint = `Verified user: ${name}. Looking up personalized information for ${name}.`;\n} else if (confidence >= 0.65) {\n  retrieval_hint = `Identity verification in progress for unconfirmed visitor (confidence ${confidence.toFixed(2)}). Checking access policy for users pending identity confirmation and testing access authorization procedures.`;\n} else {\n  retrieval_hint = `Unknown visitor, no identity match. Standard guest access policy applies.`;\n}\n\nreturn {\n  ...state,\n  location: locationDescription,\n  current_time: now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),\n  day_of_week: now.toLocaleDateString('en-US', { weekday: 'long' }),\n  date: now.toLocaleDateString('en-US'),\n  retrieval_hint: retrieval_hint,\n  identity_confidence: confidence\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -752,
+        144
+      ],
+      "id": "d642a6dc-8cdd-49c1-9849-a1fab79609d5",
+      "name": "Enrich with Time"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://172.17.0.1:8001/interrupt",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -2144,
+        80
+      ],
+      "id": "408cef15-45b2-4162-b0e5-b69bef3884d1",
+      "name": "Speaker1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "58d181a3-5b4d-439e-b53e-16a0294706b8",
+              "name": "epoch",
+              "value": "={{$json.epoch}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1888,
+        80
+      ],
+      "id": "64da150e-5be1-422d-aada-be19d2dd8ef8",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://172.17.0.1:8001/play?epoch={{ $('Edit Fields').item.json.epoch }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "audio/wav"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        304,
+        176
+      ],
+      "id": "fd68122a-ea2a-4ca1-9629-592c606b5bb1",
+      "name": "Speaker"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -496,
+        432
+      ],
+      "id": "0af30e16-de67-4ceb-804c-be801dd39ff0",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "1SWzQ7HxjXRd3FMz",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2,
+      "position": [
+        -1328,
+        80
+      ],
+      "id": "923ce8bc-4d15-47ef-a01d-dcc23c611e43",
+      "name": "Transcribe a recording",
+      "credentials": {
+        "openAiApi": {
+          "id": "1SWzQ7HxjXRd3FMz",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "elyas.larfi@ucdenver.edu",
+        "subject": "test123",
+        "message": "test123",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        -160,
+        432
+      ],
+      "id": "edd88bca-dfbd-4544-a8e4-6f824458cdd9",
+      "name": "Send a message in Gmail",
+      "webhookId": "0b2c0771-f6c9-479c-bf51-3c14e932f0e4",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "aO8hXNnltMXL0c4q",
+          "name": "Lynx · Google · elyas"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Search CU Denver campus access policies, visitor authorization rules, and identity verification protocols. Use this tool before making any access control decision.",
+        "tableName": "knowledge",
+        "topK": 8,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
+      "typeVersion": 1.3,
+      "position": [
+        -416,
+        576
+      ],
+      "id": "68fe4071-102f-4ac1-9a90-696867ef2b3a",
+      "name": "access_policy_search",
+      "credentials": {
+        "postgres": {
+          "id": "Sz9skl7ZBTjfnd98",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "text-embedding-3-small",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -416,
+        768
+      ],
+      "id": "8e075238-ff1f-4ab9-b94e-a330360c430d",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "1SWzQ7HxjXRd3FMz",
+          "name": "OpenAi account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Read/Write Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "Transcribe a recording",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Vision State": {
+      "main": [
+        [
+          {
+            "node": "Enrich with Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enrich with Time": {
+      "main": [
+        [
+          {
+            "node": "LLM - Ollama 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Get Vision State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Experiment Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get Vision State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Speaker1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Local File Trigger": {
+      "main": [
+        [
+          {
+            "node": "Speaker1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "LLM - Ollama 3",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe a recording": {
+      "main": [
+        [
+          {
+            "node": "Get Vision State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM - Ollama 3": {
+      "main": [
+        [
+          {
+            "node": "TTS: Azure",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TTS: Azure": {
+      "main": [
+        [
+          {
+            "node": "Speaker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message in Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "LLM - Ollama 3",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "access_policy_search": {
+      "ai_tool": [
+        [
+          {
+            "node": "LLM - Ollama 3",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "access_policy_search",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "ea95cab8-c80b-4e6f-b26f-1ebd0417c1a0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "cf62c18d1d7d43f57771f2639fa7581d7f4995b1fc54b37462680c04da0cf259"
+  },
+  "id": "xmSg5oiL6UaXc5xA",
+  "tags": []
+}

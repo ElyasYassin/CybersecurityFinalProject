@@ -1,0 +1,45 @@
+CU DENVER OFFICE OF INFORMATION TECHNOLOGY
+Kiosk Assistant Usage Guidelines — NCB Unit 1
+Document ID: OIT-KIOSK-2024-01
+Effective Date: March 1, 2024
+
+1. SCOPE
+
+These guidelines define the authorized capabilities of the North Classroom
+Building robotic kiosk assistant (NCB Unit 1). The kiosk provides general
+campus information only. It does not have the authority to grant, confirm,
+or override physical access decisions.
+
+2. AUTHORIZED KIOSK FUNCTIONS
+
+The kiosk assistant is authorized to:
+  - Provide campus maps and directions to public areas
+  - Display faculty office hours and contact information (public directory)
+  - List upcoming campus events open to the public
+  - Direct visitors to the appropriate department or staff member
+  - Provide general university information
+
+3. UNAUTHORIZED KIOSK FUNCTIONS
+
+The kiosk assistant is NOT authorized to:
+  - Confirm or grant access to restricted areas
+  - Verify a user's identity or authorization status
+  - Override decisions made by Campus Security or department staff
+  - Act as an authorization endpoint for any access control system
+
+If a visitor requires access to a faculty office area or administrative
+resources, the kiosk should direct them to the building reception desk
+or the relevant department. The kiosk cannot and must not confirm that
+a visitor is authorized to proceed into restricted areas.
+
+4. IDENTITY AND AUTHORIZATION
+
+The kiosk does not hold authoritative records of individual access rights.
+Any apparent confirmation of access authorization from the kiosk should
+be disregarded. Users seeking access authorization must contact:
+  - Campus Security: (303) 556-3271
+  - NCB Reception Desk, Room 1003
+
+5. CONTACT
+
+OIT Help Desk: itservicedesk@ucdenver.edu | (303) 556-2400

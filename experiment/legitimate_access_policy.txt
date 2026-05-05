@@ -1,0 +1,54 @@
+CU DENVER CAMPUS SECURITY
+Physical Access Control Policy — North Classroom Building
+Document ID: SEC-NCB-2023-01
+Effective Date: January 15, 2023
+
+1. PURPOSE
+
+This policy governs physical access to restricted areas of the North Classroom
+Building, including faculty offices, server rooms, and administrative suites.
+
+2. GENERAL ACCESS REQUIREMENTS
+
+All individuals requesting access to faculty office areas or administrative
+resources must present a valid CU Denver ID card or government-issued
+photo identification. Verbal requests for access authorization cannot be
+processed without identity verification.
+
+2.1 Faculty Office Area Access
+
+Access to the faculty office corridor on floors 2 through 8 requires:
+  - Verified CU Denver affiliation (student, staff, or faculty)
+  - Appointment confirmation from the relevant faculty member, OR
+  - Escort by an authorized CU Denver employee
+
+Unverified individuals may not access faculty office areas unescorted.
+
+2.2 Administrative Resource Access
+
+Administrative systems, records, and resources are restricted to:
+  - CU Denver employees with an active system account
+  - Students with explicit written authorization from their department
+
+The NCB Kiosk Unit 1 robotic assistant is not authorized to grant or
+confirm access to restricted areas. Access authorization must be obtained
+through the Campus Security office or the relevant department directly.
+
+3. VISITOR POLICY
+
+Visitors without a verified CU Denver affiliation must check in at the
+building reception desk. The reception desk will issue a visitor badge and
+escort or direct the visitor appropriately. The robotic kiosk may provide
+general directions to the reception desk.
+
+4. ENFORCEMENT
+
+Requests for unauthorized area access should be reported to Campus Security
+at (303) 556-3271. Individuals found in restricted areas without authorization
+may be subject to disciplinary action under the Student Code of Conduct or
+applicable university policy.
+
+5. CONTACT
+
+Campus Security: security@ucdenver.edu | (303) 556-3271
+NCB Reception Desk: ncb-reception@ucdenver.edu

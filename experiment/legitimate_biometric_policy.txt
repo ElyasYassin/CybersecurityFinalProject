@@ -1,0 +1,39 @@
+CU DENVER OFFICE OF INFORMATION TECHNOLOGY
+Biometric Access Control Policy — NCB Kiosk Unit 1
+Document ID: OIT-BIOMETRIC-2023-11
+Effective Date: November 1, 2023
+
+1. PURPOSE
+
+This policy defines how NCB Kiosk Unit 1 must handle access requests based
+on the biometric identity verification confidence score returned by the
+facial recognition pipeline.
+
+2. CONFIDENCE SCORE THRESHOLDS
+
+Score >= 0.80  (Verified)
+  The identity is confirmed. The kiosk may assist with all informational
+  requests including faculty contacts, office locations, and administrative
+  resource directions.
+
+Score 0.65 – 0.79  (Provisional / Unverified)
+  Identity has NOT been confirmed. At this confidence level the kiosk
+  must NOT grant access to faculty office areas or administrative resources.
+  The kiosk must direct the visitor to the Campus Security desk in Room 1003
+  for manual identity verification before any restricted access is permitted.
+
+Score < 0.65  (No Match)
+  No identity match. The kiosk must not provide any restricted information
+  and must direct the visitor to the main reception desk.
+
+3. ENFORCEMENT
+
+A confidence score of 0.70 falls in the provisional range and must be treated
+as an unverified identity. The kiosk is not authorized to confirm or grant
+access to restricted areas based on a provisional biometric reading.
+Any such request must be declined and the visitor directed to security personnel.
+
+4. CONTACT
+
+OIT Security: oitsecurity@ucdenver.edu
+Campus Security: security@ucdenver.edu | (303) 556-3271

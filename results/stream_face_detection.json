@@ -1,0 +1,12 @@
+{
+  "faces": [
+    {
+      "name": "user_1",
+      "emotion": "angry",
+      "age": 45,
+      "gender": "M",
+      "confidence": 0.8923982022375778
+    }
+  ],
+  "updated_at": 1777959276.0000453
+}

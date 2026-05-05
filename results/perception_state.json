@@ -1,0 +1,14 @@
+{
+  "faces": [
+    {
+      "name": "Elyas",
+      "emotion": "neutral",
+      "age": 28,
+      "gender": "M",
+      "confidence": 0.7
+    }
+  ],
+  "scene_caption": "Person standing in front of the kiosk.",
+  "location": null,
+  "updated_at": 1777882785.1303768
+}

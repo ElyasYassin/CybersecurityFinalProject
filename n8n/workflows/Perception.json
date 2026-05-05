@@ -1,0 +1,404 @@
+{
+  "name": "Perception",
+  "nodes": [
+    {
+      "parameters": {
+        "model": "moondream:latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -544,
+        1024
+      ],
+      "id": "28fe0243-04fb-421b-9e8b-30ef25c6f468",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "AwGMI8niI1XmeTCb",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Describe the scene concisely. What objects are visible? What might the person be holding?",
+        "options": {
+          "passthroughBinaryImages": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        0,
+        944
+      ],
+      "id": "13ac7e6d-1a5f-48b7-87b8-9f79a05f28d1",
+      "name": "VLM - Moondream",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "url": "http://172.17.0.1:8089/latest",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -384,
+        352
+      ],
+      "id": "023b7e2f-0fa4-4c11-841e-24b9fec8d10c",
+      "name": "Capture Frame"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://172.17.0.1:8089/identify-multi",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "data",
+              "inputDataFieldName": "=data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        48,
+        512
+      ],
+      "id": "32511870-d5a3-4bde-be37-4a178e098104",
+      "name": "Identify Faces"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        384,
+        352
+      ],
+      "id": "fbe02d35-60ff-4acf-bea8-80850e8225cd",
+      "name": "Merge 1"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        608,
+        480
+      ],
+      "id": "f9705eb8-20fb-4df3-a5b6-04c398534a07",
+      "name": "Merge 2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst streamFaces = Array.isArray(item.faces) ? item.faces : [];\nconst identities = Array.isArray(item.identities) ? item.identities : [];\nconst sceneCaption =\n  item.output ??\n  item.scene_caption ??\n  \"No scene description available.\";\nconst faces = [];\nif (streamFaces.length > 0) {\n  streamFaces.forEach((f, i) => {\n    faces.push({\n      name: f.name || identities[i]?.name || \"Unknown\",\n      emotion: f.emotion ?? \"neutral\",\n      age: f.age ?? null,\n      gender: f.gender ?? null,\n      confidence: f.confidence ?? identities[i]?.confidence ?? 0,\n    });\n  });\n} else if (identities.length > 0) {\n  identities.forEach((id) => {\n    faces.push({\n      name: id.name,\n      emotion: null,\n      age: null,\n      gender: null,\n      confidence: id.confidence,\n    });\n  });\n} else {\n  faces.push({\n    name: \"Unknown\",\n    emotion: null,\n    age: null,\n    gender: null,\n    confidence: 0,\n  });\n}\nreturn {\n  faces,\n  scene_caption: sceneCaption,\n  updated_at: Date.now() / 1000,\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        848,
+        480
+      ],
+      "id": "06ee77ff-9f59-4794-a686-300d1593b5f5",
+      "name": "Build State JSON"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://172.17.0.1:8089/state",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ faces: $json.faces, scene_caption: $json.scene_caption, updated_at: $json.updated_at }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1072,
+        480
+      ],
+      "id": "e5a1b2bd-434a-4ab5-bd4c-1d5aeb4d7ca2",
+      "name": "Save State"
+    },
+    {
+      "parameters": {
+        "content": "## DeepFace\nDetect face, analyze emotion, age, gender"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "ded5f662-8469-4a29-af8e-02a25d1515bc",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Moondream\nScene caption every 2s"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -32,
+        1344
+      ],
+      "typeVersion": 1,
+      "id": "0964bf88-e809-4af3-97cd-ebdcf72b5300",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Identify Faces\nMulti-face identification via embeddings\n(identify-multi returns one identity per face)",
+        "height": 144
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        688
+      ],
+      "typeVersion": 1,
+      "id": "0d363175-60a8-4604-80ae-bcfbeba4c68d",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Save to JSON\nWrites to perception_state.json"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1008,
+        288
+      ],
+      "typeVersion": 1,
+      "id": "11e57f14-a569-4a15-84af-41d598890b7f",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -608,
+        608
+      ],
+      "id": "a9891c40-5eee-4331-86fd-0084dcace2b9",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "seconds",
+              "secondsInterval": 7
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -624,
+        352
+      ],
+      "id": "348d177e-fee8-42c7-9b44-abafdb580d55",
+      "name": "Schedule (every 7s)"
+    },
+    {
+      "parameters": {
+        "url": "http://172.17.0.1:8089/stream-faces",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        48,
+        240
+      ],
+      "id": "3f6b9656-d6df-4afd-9b48-013342a80739",
+      "name": "Stream Faces (local)1"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4.1-mini",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        0,
+        1120
+      ],
+      "id": "e172a3c7-577a-4c77-8eab-8516201a1ecc",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "REPLACE_WITH_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        []
+      ]
+    },
+    "VLM - Moondream": {
+      "main": [
+        [
+          {
+            "node": "Merge 2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Capture Frame",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Capture Frame": {
+      "main": [
+        [
+          {
+            "node": "Identify Faces",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "VLM - Moondream",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Stream Faces (local)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Identify Faces": {
+      "main": [
+        [
+          {
+            "node": "Merge 1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge 1": {
+      "main": [
+        [
+          {
+            "node": "Merge 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge 2": {
+      "main": [
+        [
+          {
+            "node": "Build State JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build State JSON": {
+      "main": [
+        [
+          {
+            "node": "Save State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule (every 7s)": {
+      "main": [
+        [
+          {
+            "node": "Capture Frame",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stream Faces (local)1": {
+      "main": [
+        [
+          {
+            "node": "Merge 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "VLM - Moondream",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "a6a779c3-d08a-4868-9de0-34fab68c1f43",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "cf62c18d1d7d43f57771f2639fa7581d7f4995b1fc54b37462680c04da0cf259"
+  },
+  "id": "X0IdNLMJeI4eJskP",
+  "tags": []
+}

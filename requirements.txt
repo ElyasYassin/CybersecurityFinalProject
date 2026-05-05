@@ -1,0 +1,39 @@
+# Core Web Framework
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic
+httpx
+
+# Vector Store & Database
+qdrant-client
+psycopg2-binary
+
+# ML/AI Libraries
+openai
+tiktoken
+numpy
+openai-whisper
+
+# Perception
+opencv-python
+opencv-python-headless
+redis
+deepface
+
+# Web Scraping & HTTP
+requests
+beautifulsoup4
+
+# Sound
+sounddevice 
+webrtcvad 
+openwakeword
+pygame
+
+# Utilities
+python-dotenv
+
+# Testing
+pytest
+pytest-asyncio

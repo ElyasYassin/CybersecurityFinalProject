@@ -1,0 +1,88 @@
+name: cb_attack
+
+services:
+
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    command: redis-server --save "" --appendonly no
+    ports:
+      - "6379:6379"
+
+  n8n:
+    image: n8nio/n8n:latest
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:-CHANGE_ME_LONG_RANDOM}
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - N8N_RUNNERS_ENABLED=true
+      - DB_SQLITE_POOL_SIZE=5
+      - N8N_HOST=0.0.0.0
+      - N8N_PROTOCOL=http
+      - N8N_PORT=5678
+      - WEBHOOK_URL=http://localhost:5678/
+      - N8N_EXECUTIONS_MODE=queue
+      - QUEUE_BULL_REDIS_HOST=redis
+      - QUEUE_BULL_REDIS_PORT=6379
+      - EXECUTIONS_TIMEOUT=180
+      - EXECUTIONS_TIMEOUT_MAX=600
+      - 'NODES_EXCLUDE=["n8n-nodes-base.executeCommand"]'
+      - N8N_RESTRICT_FILE_ACCESS_TO=/home/node/.n8n-files;/data/asr
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./ASR:/data/asr
+    depends_on:
+      - redis
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5678/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  n8n-worker:
+    image: n8nio/n8n:latest
+    command: worker
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:-CHANGE_ME_LONG_RANDOM}
+      - N8N_EXECUTIONS_MODE=queue
+      - QUEUE_BULL_REDIS_HOST=redis
+      - QUEUE_BULL_REDIS_PORT=6379
+      - N8N_WORKER_CONCURRENCY=1
+      - EXECUTIONS_TIMEOUT=180
+      - EXECUTIONS_TIMEOUT_MAX=600
+      - 'NODES_EXCLUDE=["n8n-nodes-base.executeCommand"]'
+      - N8N_RESTRICT_FILE_ACCESS_TO=/home/node/.n8n-files;/data/asr
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./ASR:/data/asr
+    depends_on:
+      - redis
+      
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: n8n
+      POSTGRES_PASSWORD: n8npassword
+      POSTGRES_DB: n8n
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      
+  adminer:
+    image: adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+
+volumes:
+  n8n_data:
+  postgres_data:
